@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pounce</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  body {
+    font-family: -apple-system, system-ui, sans-serif;
+    margin: 0; padding: 16px;
+    background: var(--tg-theme-bg-color, #fff);
+    color: var(--tg-theme-text-color, #000);
+  }
+  label { display: block; margin: 18px 0 6px; font-size: 14px; color: var(--tg-theme-hint-color, #888); }
+  input[type=text], input[type=number] {
+    width: 100%; box-sizing: border-box; padding: 12px; font-size: 16px;
+    border: none; border-radius: 10px;
+    background: var(--tg-theme-secondary-bg-color, #f1f1f1);
+    color: var(--tg-theme-text-color, #000);
+  }
+  .row { display: flex; gap: 8px; }
+  .chip {
+    flex: 1; padding: 10px; font-size: 14px; border: none; border-radius: 10px;
+    background: var(--tg-theme-secondary-bg-color, #f1f1f1);
+    color: var(--tg-theme-text-color, #000);
+  }
+  .chip.active {
+    background: var(--tg-theme-button-color, #2481cc);
+    color: var(--tg-theme-button-text-color, #fff);
+  }
+  .check { display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--tg-theme-text-color, #000); }
+</style>
+</head>
+<body>
+  <label for="query">Що шукаємо?</label>
+  <input id="query" type="text" placeholder="Напр. помада dior">
+
+  <label>Ціна, грн</label>
+  <div class="row">
+    <input id="min" type="number" inputmode="numeric" placeholder="від">
+    <input id="max" type="number" inputmode="numeric" placeholder="до">
+  </div>
+
+  <label>Сортування</label>
+  <div class="row" id="sort">
+    <button class="chip active" data-sort="new">Нові</button>
+    <button class="chip" data-sort="cheap">Дешевші</button>
+    <button class="chip" data-sort="expensive">Дорожчі</button>
+  </div>
+
+  <label class="check"><input id="watch" type="checkbox"> Стежити за пошуком</label>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+  tg.expand();
+
+  let sort = "new";
+  const chips = document.querySelectorAll("#sort .chip");
+  chips.forEach(btn => {
+    btn.addEventListener("click", () => {
+      chips.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      sort = btn.dataset.sort;
+    });
+  });
+
+  tg.MainButton.setText("Знайти");
+  tg.MainButton.show();
+  tg.MainButton.onClick(() => {
+    const query = document.getElementById("query").value.trim();
+    if (!query) {
+      tg.showAlert("Напиши, що шукаємо");
+      return;
+    }
+    const min = document.getElementById("min").value;
+    const max = document.getElementById("max").value;
+    tg.sendData(JSON.stringify({
+      query: query,
+      min_price: min ? Number(min) : null,
+      max_price: max ? Number(max) : null,
+      sort: sort,
+      watch: document.getElementById("watch").checked
+    }));
+  });
+</script>
+</body>
+</html>
