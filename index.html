@@ -96,9 +96,10 @@
   }
   .chip:active { transform: scale(.96); }
   .chip.active {
-    background: var(--accent); color: var(--on-accent); font-weight: 600;
+    background: var(--accent); color: var(--on-accent);
     box-shadow: 0 4px 12px -4px var(--accent-line);
   }
+  @media (max-width: 340px) { .chip { padding-inline: 0; font-size: 12.5px; } }
 
   /* Segmented control */
   .segmented {
@@ -200,6 +201,16 @@
   </div>
 
   <div class="section">
+    <span class="label">Період</span>
+    <div class="chips" id="period" role="radiogroup">
+      <button class="chip active" type="button" role="radio" aria-checked="true" data-period="any">Будь-коли</button>
+      <button class="chip" type="button" role="radio" aria-checked="false" data-period="1d">Сьогодні</button>
+      <button class="chip" type="button" role="radio" aria-checked="false" data-period="3d">3 дні</button>
+      <button class="chip" type="button" role="radio" aria-checked="false" data-period="7d">Тиждень</button>
+    </div>
+  </div>
+
+  <div class="section">
     <label class="switch-row">
       <span class="txt">
         <b>Стежити за пошуком</b>
@@ -296,6 +307,19 @@
     haptic("select");
   }));
 
+  /* ---------- Period ---------- */
+  let period = "any";
+  const periodBtns = document.querySelectorAll("#period .chip");
+  periodBtns.forEach(btn => btn.addEventListener("click", () => {
+    if (btn.dataset.period === period) return;
+    periodBtns.forEach(b => {
+      b.classList.toggle("active", b === btn);
+      b.setAttribute("aria-checked", b === btn ? "true" : "false");
+    });
+    period = btn.dataset.period;
+    haptic("select");
+  }));
+
   /* ---------- Watch ---------- */
   $("watch").addEventListener("change", e => haptic("impact", e.target.checked ? "medium" : "light"));
 
@@ -319,6 +343,7 @@
       min_price: min ? Number(min) : null,
       max_price: max ? Number(max) : null,
       sort: sort,
+      period: period,
       watch: $("watch").checked
     });
     haptic("notify", "success");
