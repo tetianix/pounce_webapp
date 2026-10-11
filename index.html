@@ -87,15 +87,18 @@
   .hint.show { display: block; }
 
   /* Quick price chips */
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
   .chip {
-    padding: 8px 14px; border-radius: 999px;
-    font-size: 14px; font-weight: 500;
-    background: var(--card); border: 1.5px solid transparent;
-    transition: background .15s, border-color .15s, color .15s, transform .1s;
+    min-width: 0; padding: 9px 2px; border-radius: 999px;
+    font-size: 14px; font-weight: 500; white-space: nowrap;
+    background: var(--card); border: 0;
+    transition: background .15s, color .15s, box-shadow .15s, transform .1s;
   }
   .chip:active { transform: scale(.96); }
-  .chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .chip.active {
+    background: var(--accent); color: var(--on-accent); font-weight: 600;
+    box-shadow: 0 4px 12px -4px var(--accent-line);
+  }
 
   /* Segmented control */
   .segmented {
@@ -171,8 +174,8 @@
     <div class="chips" id="presets">
       <button class="chip" type="button" data-min="" data-max="300">до 300</button>
       <button class="chip" type="button" data-min="300" data-max="700">300–700</button>
-      <button class="chip" type="button" data-min="700" data-max="1500">700–1500</button>
-      <button class="chip" type="button" data-min="1500" data-max="">від 1500</button>
+      <button class="chip" type="button" data-min="700" data-max="1500">700–1.5к</button>
+      <button class="chip" type="button" data-min="1500" data-max="">від 1.5к</button>
     </div>
   </div>
 
