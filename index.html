@@ -144,13 +144,6 @@
   .switch input:checked + .track::after { transform: translateX(20px); }
   .switch input:focus-visible + .track { box-shadow: 0 0 0 3px var(--accent-soft); }
 
-  /* Fallback submit button for browser preview (outside Telegram) */
-  #fallbackSubmit {
-    display: none; width: 100%; margin-top: 28px; padding: 15px;
-    border: 0; border-radius: 14px;
-    background: var(--accent); color: var(--on-accent);
-    font-size: 17px; font-weight: 650;
-  }
 </style>
 </head>
 <body>
@@ -197,7 +190,7 @@
     <label class="switch-row">
       <span class="txt">
         <b>Стежити за пошуком</b>
-        <small>Мурну, щойно з'явиться нове оголошення</small>
+        <small>Напишу, щойно з'явиться нове оголошення</small>
       </span>
       <span class="switch">
         <input id="watch" type="checkbox" role="switch">
@@ -206,11 +199,8 @@
     </label>
   </div>
 
-  <button id="fallbackSubmit" type="button">Знайти</button>
-
 <script>
   const tg = window.Telegram.WebApp;
-  const inTelegram = !!tg.initData;
   const root = document.documentElement;
   const $ = id => document.getElementById(id);
 
@@ -319,8 +309,7 @@
       watch: $("watch").checked
     });
     haptic("notify", "success");
-    if (inTelegram) tg.sendData(payload);
-    else console.log("sendData:", payload);
+    tg.sendData(payload);
   }
 
   $("query").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
@@ -329,10 +318,6 @@
   tg.MainButton.show();
   tg.MainButton.onClick(submit);
 
-  if (!inTelegram) {
-    $("fallbackSubmit").style.display = "block";
-    $("fallbackSubmit").addEventListener("click", submit);
-  }
 </script>
 </body>
 </html>
