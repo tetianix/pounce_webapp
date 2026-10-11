@@ -43,12 +43,11 @@
   }
   .logo {
     width: 44px; height: 44px; flex: none;
-    display: grid; place-items: center;
+    display: block; object-fit: cover;
     border-radius: 14px;
     background: var(--accent);
     box-shadow: 0 6px 16px -6px var(--accent-line);
   }
-  .logo svg { width: 40px; height: 40px; display: block; }
   .brand h1 { margin: 0; font-size: 24px; font-weight: 750; letter-spacing: -0.02em; }
   .brand h1 span { color: var(--accent); }
   .brand p { margin: 2px 0 0; font-size: 13px; color: var(--hint); }
@@ -152,17 +151,7 @@
 </head>
 <body>
   <header class="brand">
-    <div class="logo" aria-hidden="true">
-      <svg viewBox="4 8 56 44" fill="#fff" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M17 36 C 20 29, 33 25, 43 26 C 46 26.5, 46 32, 43 33.5 C 34 37, 23 40, 17 36 Z" stroke-width="1"/>
-        <circle cx="47" cy="25.5" r="6.2" stroke="none"/>
-        <path d="M42.6 21.5 L43.2 14.2 L47.8 19.6 Z" stroke-width="1.2"/>
-        <path d="M48.6 19.4 L52.6 14 L53 21.6 Z" stroke-width="1.2"/>
-        <path d="M41 31.5 L55.5 35.5 M38.5 33 L52 39" fill="none" stroke-width="3.6"/>
-        <path d="M22 36.5 L9 43.5 M19.5 34 L7.5 37" fill="none" stroke-width="3.6"/>
-        <path d="M18 33 C 11 31, 8.5 24, 12 18.5" fill="none" stroke-width="3.4"/>
-      </svg>
-    </div>
+    <img class="logo" src="logo.JPG" alt="" width="44" height="44">
     <div>
       <h1>Pounce<span>.</span></h1>
       <p>Полюю на оголошення OLX за тебе</p>
