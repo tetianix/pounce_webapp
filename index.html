@@ -98,6 +98,7 @@
     background: var(--accent); color: var(--on-accent);
     box-shadow: 0 4px 12px -4px var(--accent-line);
   }
+  .section.disabled .chips { opacity: .4; pointer-events: none; }
   @media (max-width: 340px) { .chip { padding-inline: 0; font-size: 12.5px; } }
 
   /* Segmented control */
@@ -132,6 +133,12 @@
 
   .switch { position: relative; width: 51px; height: 31px; flex: none; }
   .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .watch-note {
+    display: none; margin: 8px 4px 0;
+    font-size: 13px; color: var(--hint);
+  }
+  .watch-note.show { display: block; }
+
   .switch .track {
     position: absolute; inset: 0; border-radius: 999px;
     background: color-mix(in srgb, var(--hint) 35%, transparent);
@@ -189,7 +196,7 @@
     </div>
   </div>
 
-  <div class="section">
+  <div class="section" id="periodSection">
     <span class="label">Період</span>
     <div class="chips" id="period" role="radiogroup">
       <button class="chip active" type="button" role="radio" aria-checked="true" data-period="any">Будь-коли</button>
@@ -210,6 +217,7 @@
         <span class="track"></span>
       </span>
     </label>
+    <div class="watch-note" id="watchNote">Для стеження період не враховується</div>
   </div>
 
 <script>
@@ -221,6 +229,11 @@
     light: { color: "#F06292", text: "#ffffff" },
     dark:  { color: "#F48FB1", text: "#2a0f19" }
   };
+  const MUTED = {
+    light: { color: "#e5e5ea", text: "#8e8e93" },
+    dark:  { color: "#3a3a3c", text: "#8e8e93" }
+  };
+  const STORAGE_KEY = "pounce_form";
 
   function haptic(kind, style) {
     const h = tg.HapticFeedback;
@@ -241,13 +254,15 @@
     if (tg.isVersionAtLeast("7.10") && tg.setBottomBarColor) {
       tg.setBottomBarColor(bg);
     }
-    tg.MainButton.setParams({ color: ACCENT[scheme].color, text_color: ACCENT[scheme].text });
+    updateMainButton();
   }
 
-  tg.ready();
-  tg.expand();
-  applyTheme();
-  tg.onEvent("themeChanged", applyTheme);
+  function updateMainButton() {
+    const scheme = root.dataset.scheme === "dark" ? "dark" : "light";
+    const active = $("query").value.trim() !== "";
+    const colors = active ? ACCENT[scheme] : MUTED[scheme];
+    tg.MainButton.setParams({ color: colors.color, text_color: colors.text, is_active: active });
+  }
 
   /* ---------- Price ---------- */
   const minEl = $("min"), maxEl = $("max"), hintEl = $("priceHint");
@@ -269,6 +284,7 @@
   [minEl, maxEl].forEach(el => el.addEventListener("input", () => {
     validatePrice();
     syncPresets();
+    saveForm();
   }));
 
   presets.forEach(chip => chip.addEventListener("click", () => {
@@ -280,37 +296,79 @@
     haptic("impact", "light");
     validatePrice();
     syncPresets();
+    saveForm();
   }));
 
   /* ---------- Sort ---------- */
   let sort = "new";
   const segBtns = document.querySelectorAll("#sort button");
   const thumb = document.querySelector("#sort .thumb");
-  segBtns.forEach((btn, i) => btn.addEventListener("click", () => {
+  function setSort(value) {
+    segBtns.forEach((b, i) => {
+      const on = b.dataset.sort === value;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-checked", on ? "true" : "false");
+      if (on) thumb.style.transform = `translateX(${i * 100}%)`;
+    });
+    sort = value;
+  }
+  segBtns.forEach(btn => btn.addEventListener("click", () => {
     if (btn.dataset.sort === sort) return;
-    segBtns.forEach(b => { b.classList.remove("active"); b.setAttribute("aria-checked", "false"); });
-    btn.classList.add("active");
-    btn.setAttribute("aria-checked", "true");
-    thumb.style.transform = `translateX(${i * 100}%)`;
-    sort = btn.dataset.sort;
+    setSort(btn.dataset.sort);
     haptic("select");
+    saveForm();
   }));
 
   /* ---------- Period ---------- */
   let period = "any";
   const periodBtns = document.querySelectorAll("#period .chip");
+  function setPeriod(value) {
+    periodBtns.forEach(b => {
+      const on = b.dataset.period === value;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-checked", on ? "true" : "false");
+    });
+    period = value;
+  }
   periodBtns.forEach(btn => btn.addEventListener("click", () => {
     if (btn.dataset.period === period) return;
-    periodBtns.forEach(b => {
-      b.classList.toggle("active", b === btn);
-      b.setAttribute("aria-checked", b === btn ? "true" : "false");
-    });
-    period = btn.dataset.period;
+    setPeriod(btn.dataset.period);
     haptic("select");
+    saveForm();
   }));
 
   /* ---------- Watch ---------- */
-  $("watch").addEventListener("change", e => haptic("impact", e.target.checked ? "medium" : "light"));
+  function syncWatch() {
+    const on = $("watch").checked;
+    $("periodSection").classList.toggle("disabled", on);
+    periodBtns.forEach(b => { b.disabled = on; });
+    $("watchNote").classList.toggle("show", on);
+  }
+  $("watch").addEventListener("change", e => {
+    haptic("impact", e.target.checked ? "medium" : "light");
+    syncWatch();
+  });
+
+  /* ---------- Storage ---------- */
+  function saveForm() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        query: $("query").value, min: minEl.value, max: maxEl.value, sort: sort, period: period
+      }));
+    } catch (_) {}
+  }
+
+  function loadForm() {
+    let data;
+    try { data = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (_) { return; }
+    if (!data || typeof data !== "object") return;
+    const isPrice = v => typeof v === "string" && /^\d*$/.test(v);
+    if (typeof data.query === "string") $("query").value = data.query;
+    if (isPrice(data.min)) minEl.value = data.min;
+    if (isPrice(data.max)) maxEl.value = data.max;
+    if ([...segBtns].some(b => b.dataset.sort === data.sort)) setSort(data.sort);
+    if ([...periodBtns].some(b => b.dataset.period === data.period)) setPeriod(data.period);
+  }
 
   /* ---------- Submit ---------- */
   function submit() {
@@ -340,6 +398,22 @@
   }
 
   $("query").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
+  $("query").addEventListener("input", () => {
+    updateMainButton();
+    saveForm();
+  });
+
+  thumb.style.transition = "none";
+  loadForm();
+  validatePrice();
+  syncPresets();
+  syncWatch();
+  requestAnimationFrame(() => { thumb.style.transition = ""; });
+
+  tg.ready();
+  tg.expand();
+  applyTheme();
+  tg.onEvent("themeChanged", applyTheme);
 
   tg.MainButton.setText("Знайти 🐾");
   tg.MainButton.show();
