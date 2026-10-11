@@ -2,88 +2,337 @@
 <html lang="uk">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Pounce</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
+  :root {
+    --bg: var(--tg-theme-bg-color, #ffffff);
+    --card: var(--tg-theme-secondary-bg-color, #f4f1f3);
+    --text: var(--tg-theme-text-color, #1c1c1e);
+    --hint: var(--tg-theme-hint-color, #8e8e93);
+    --danger: var(--tg-theme-destructive-text-color, #e5484d);
+
+    /* Pounce bubblegum */
+    --accent: #F06292;
+    --on-accent: #ffffff;
+    --accent-soft: rgba(240, 98, 146, 0.14);
+    --accent-line: rgba(240, 98, 146, 0.45);
+  }
+  :root[data-scheme="dark"] {
+    --accent: #F48FB1;
+    --on-accent: #2a0f19;
+    --accent-soft: rgba(244, 143, 177, 0.16);
+    --accent-line: rgba(244, 143, 177, 0.5);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
   body {
-    font-family: -apple-system, system-ui, sans-serif;
-    margin: 0; padding: 16px;
-    background: var(--tg-theme-bg-color, #fff);
-    color: var(--tg-theme-text-color, #000);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    padding: 12px 16px calc(24px + env(safe-area-inset-bottom));
+    -webkit-font-smoothing: antialiased;
   }
-  label { display: block; margin: 18px 0 6px; font-size: 14px; color: var(--tg-theme-hint-color, #888); }
-  input[type=text], input[type=number] {
-    width: 100%; box-sizing: border-box; padding: 12px; font-size: 16px;
-    border: none; border-radius: 10px;
-    background: var(--tg-theme-secondary-bg-color, #f1f1f1);
-    color: var(--tg-theme-text-color, #000);
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  /* Header */
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 0 18px;
   }
-  .row { display: flex; gap: 8px; }
+  .logo {
+    width: 44px; height: 44px; flex: none;
+    display: grid; place-items: center;
+    border-radius: 14px;
+    background: var(--accent);
+    font-size: 24px; line-height: 1;
+    box-shadow: 0 6px 16px -6px var(--accent-line);
+  }
+  .brand h1 { margin: 0; font-size: 24px; font-weight: 750; letter-spacing: -0.02em; }
+  .brand h1 span { color: var(--accent); }
+  .brand p { margin: 2px 0 0; font-size: 13px; color: var(--hint); }
+
+  /* Sections */
+  .section { margin-top: 20px; }
+  .label {
+    display: block; margin: 0 4px 8px;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.02em;
+    text-transform: uppercase; color: var(--hint);
+  }
+
+  .field {
+    width: 100%; padding: 14px 16px;
+    font: inherit; font-size: 17px; color: var(--text);
+    background: var(--card);
+    border: 1.5px solid transparent; border-radius: 14px;
+    outline: none; appearance: none; -webkit-appearance: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .field::placeholder { color: var(--hint); opacity: .8; }
+  .field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .field.invalid { border-color: var(--danger); }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+
+  .price { display: flex; align-items: center; gap: 8px; }
+  .price .dash { color: var(--hint); }
+  .price .field { flex: 1; min-width: 0; }
+
+  .hint {
+    display: none; margin: 8px 4px 0;
+    font-size: 13px; color: var(--danger);
+  }
+  .hint.show { display: block; }
+
+  /* Quick price chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .chip {
-    flex: 1; padding: 10px; font-size: 14px; border: none; border-radius: 10px;
-    background: var(--tg-theme-secondary-bg-color, #f1f1f1);
-    color: var(--tg-theme-text-color, #000);
+    padding: 8px 14px; border-radius: 999px;
+    font-size: 14px; font-weight: 500;
+    background: var(--card); border: 1.5px solid transparent;
+    transition: background .15s, border-color .15s, color .15s, transform .1s;
   }
-  .chip.active {
-    background: var(--tg-theme-button-color, #2481cc);
-    color: var(--tg-theme-button-text-color, #fff);
+  .chip:active { transform: scale(.96); }
+  .chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+  /* Segmented control */
+  .segmented {
+    position: relative; display: grid; grid-template-columns: repeat(3, 1fr);
+    padding: 4px; border-radius: 14px; background: var(--card);
   }
-  .check { display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--tg-theme-text-color, #000); }
+  .segmented .thumb {
+    position: absolute; top: 4px; bottom: 4px; left: 4px;
+    width: calc((100% - 8px) / 3);
+    border-radius: 10px; background: var(--accent);
+    box-shadow: 0 4px 12px -4px var(--accent-line);
+    transition: transform .25s cubic-bezier(.3, .7, .4, 1);
+  }
+  .segmented button {
+    position: relative; z-index: 1;
+    padding: 10px 4px; border: 0; background: none;
+    font-size: 15px; font-weight: 600; color: var(--text);
+    transition: color .2s;
+  }
+  .segmented button.active { color: var(--on-accent); }
+
+  /* Toggle */
+  .switch-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; border-radius: 14px; background: var(--card);
+    cursor: pointer;
+  }
+  .switch-row .txt { flex: 1; }
+  .switch-row .txt b { display: block; font-weight: 600; }
+  .switch-row .txt small { display: block; margin-top: 2px; font-size: 13px; color: var(--hint); }
+
+  .switch { position: relative; width: 51px; height: 31px; flex: none; }
+  .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .switch .track {
+    position: absolute; inset: 0; border-radius: 999px;
+    background: color-mix(in srgb, var(--hint) 35%, transparent);
+    transition: background .2s;
+  }
+  .switch .track::after {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 27px; height: 27px; border-radius: 50%;
+    background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25);
+    transition: transform .22s cubic-bezier(.3, .7, .4, 1);
+  }
+  .switch input:checked + .track { background: var(--accent); }
+  .switch input:checked + .track::after { transform: translateX(20px); }
+  .switch input:focus-visible + .track { box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  /* Fallback submit button for browser preview (outside Telegram) */
+  #fallbackSubmit {
+    display: none; width: 100%; margin-top: 28px; padding: 15px;
+    border: 0; border-radius: 14px;
+    background: var(--accent); color: var(--on-accent);
+    font-size: 17px; font-weight: 650;
+  }
 </style>
 </head>
 <body>
-  <label for="query">Що шукаємо?</label>
-  <input id="query" type="text" placeholder="Напр. помада dior">
+  <header class="brand">
+    <div class="logo" aria-hidden="true">🐾</div>
+    <div>
+      <h1>Pounce<span>.</span></h1>
+      <p>Полюю на оголошення OLX за тебе</p>
+    </div>
+  </header>
 
-  <label>Ціна, грн</label>
-  <div class="row">
-    <input id="min" type="number" inputmode="numeric" placeholder="від">
-    <input id="max" type="number" inputmode="numeric" placeholder="до">
+  <div class="section">
+    <label class="label" for="query">Що шукаємо?</label>
+    <input id="query" class="field" type="text" placeholder="Напр. помада dior" autocomplete="off" enterkeyhint="done">
   </div>
 
-  <label>Сортування</label>
-  <div class="row" id="sort">
-    <button class="chip active" data-sort="new">Нові</button>
-    <button class="chip" data-sort="cheap">Дешевші</button>
-    <button class="chip" data-sort="expensive">Дорожчі</button>
+  <div class="section">
+    <span class="label">Ціна, грн</span>
+    <div class="price">
+      <input id="min" class="field" type="number" inputmode="numeric" min="0" placeholder="від" aria-label="Ціна від">
+      <span class="dash">—</span>
+      <input id="max" class="field" type="number" inputmode="numeric" min="0" placeholder="до" aria-label="Ціна до">
+    </div>
+    <div class="hint" id="priceHint" role="alert">«Від» не може бути більше, ніж «до» 🙀</div>
+    <div class="chips" id="presets">
+      <button class="chip" type="button" data-min="" data-max="300">до 300</button>
+      <button class="chip" type="button" data-min="300" data-max="700">300–700</button>
+      <button class="chip" type="button" data-min="700" data-max="1500">700–1500</button>
+      <button class="chip" type="button" data-min="1500" data-max="">від 1500</button>
+    </div>
   </div>
 
-  <label class="check"><input id="watch" type="checkbox"> Стежити за пошуком</label>
+  <div class="section">
+    <span class="label">Сортування</span>
+    <div class="segmented" id="sort" role="radiogroup">
+      <div class="thumb" aria-hidden="true"></div>
+      <button type="button" role="radio" class="active" aria-checked="true" data-sort="new">Нові</button>
+      <button type="button" role="radio" aria-checked="false" data-sort="cheap">Дешевші</button>
+      <button type="button" role="radio" aria-checked="false" data-sort="expensive">Дорожчі</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <label class="switch-row">
+      <span class="txt">
+        <b>Стежити за пошуком</b>
+        <small>Мурну, щойно з'явиться нове оголошення</small>
+      </span>
+      <span class="switch">
+        <input id="watch" type="checkbox" role="switch">
+        <span class="track"></span>
+      </span>
+    </label>
+  </div>
+
+  <button id="fallbackSubmit" type="button">Знайти</button>
 
 <script>
   const tg = window.Telegram.WebApp;
+  const inTelegram = !!tg.initData;
+  const root = document.documentElement;
+  const $ = id => document.getElementById(id);
+
+  const ACCENT = {
+    light: { color: "#F06292", text: "#ffffff" },
+    dark:  { color: "#F48FB1", text: "#2a0f19" }
+  };
+
+  function haptic(kind, style) {
+    const h = tg.HapticFeedback;
+    if (!h || !tg.isVersionAtLeast("6.1")) return;
+    if (kind === "impact") h.impactOccurred(style || "light");
+    else if (kind === "select") h.selectionChanged();
+    else if (kind === "notify") h.notificationOccurred(style);
+  }
+
+  function applyTheme() {
+    const scheme = tg.colorScheme === "dark" ? "dark" : "light";
+    root.dataset.scheme = scheme;
+    const bg = tg.themeParams.bg_color || (scheme === "dark" ? "#1c1c1e" : "#ffffff");
+    if (tg.isVersionAtLeast("6.1")) {
+      tg.setHeaderColor(bg);
+      tg.setBackgroundColor(bg);
+    }
+    if (tg.isVersionAtLeast("7.10") && tg.setBottomBarColor) {
+      tg.setBottomBarColor(bg);
+    }
+    tg.MainButton.setParams({ color: ACCENT[scheme].color, text_color: ACCENT[scheme].text });
+  }
+
   tg.ready();
   tg.expand();
+  applyTheme();
+  tg.onEvent("themeChanged", applyTheme);
 
+  /* ---------- Price ---------- */
+  const minEl = $("min"), maxEl = $("max"), hintEl = $("priceHint");
+  const presets = document.querySelectorAll("#presets .chip");
+
+  function syncPresets() {
+    presets.forEach(c => c.classList.toggle("active",
+      c.dataset.min === minEl.value && c.dataset.max === maxEl.value));
+  }
+
+  function validatePrice() {
+    const bad = minEl.value !== "" && maxEl.value !== "" && Number(minEl.value) > Number(maxEl.value);
+    hintEl.classList.toggle("show", bad);
+    minEl.classList.toggle("invalid", bad);
+    maxEl.classList.toggle("invalid", bad);
+    return !bad;
+  }
+
+  [minEl, maxEl].forEach(el => el.addEventListener("input", () => {
+    validatePrice();
+    syncPresets();
+  }));
+
+  presets.forEach(chip => chip.addEventListener("click", () => {
+    if (chip.classList.contains("active")) {
+      minEl.value = ""; maxEl.value = "";
+    } else {
+      minEl.value = chip.dataset.min; maxEl.value = chip.dataset.max;
+    }
+    haptic("impact", "light");
+    validatePrice();
+    syncPresets();
+  }));
+
+  /* ---------- Sort ---------- */
   let sort = "new";
-  const chips = document.querySelectorAll("#sort .chip");
-  chips.forEach(btn => {
-    btn.addEventListener("click", () => {
-      chips.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      sort = btn.dataset.sort;
-    });
-  });
+  const segBtns = document.querySelectorAll("#sort button");
+  const thumb = document.querySelector("#sort .thumb");
+  segBtns.forEach((btn, i) => btn.addEventListener("click", () => {
+    if (btn.dataset.sort === sort) return;
+    segBtns.forEach(b => { b.classList.remove("active"); b.setAttribute("aria-checked", "false"); });
+    btn.classList.add("active");
+    btn.setAttribute("aria-checked", "true");
+    thumb.style.transform = `translateX(${i * 100}%)`;
+    sort = btn.dataset.sort;
+    haptic("select");
+  }));
 
-  tg.MainButton.setText("Знайти");
-  tg.MainButton.show();
-  tg.MainButton.onClick(() => {
-    const query = document.getElementById("query").value.trim();
+  /* ---------- Watch ---------- */
+  $("watch").addEventListener("change", e => haptic("impact", e.target.checked ? "medium" : "light"));
+
+  /* ---------- Submit ---------- */
+  function submit() {
+    const query = $("query").value.trim();
     if (!query) {
-      tg.showAlert("Напиши, що шукаємо");
+      haptic("notify", "error");
+      $("query").focus();
+      try { tg.showAlert("Напиши, що шукаємо"); } catch (_) { alert("Напиши, що шукаємо"); }
       return;
     }
-    const min = document.getElementById("min").value;
-    const max = document.getElementById("max").value;
-    tg.sendData(JSON.stringify({
+    if (!validatePrice()) {
+      haptic("notify", "error");
+      return;
+    }
+    const min = minEl.value;
+    const max = maxEl.value;
+    const payload = JSON.stringify({
       query: query,
       min_price: min ? Number(min) : null,
       max_price: max ? Number(max) : null,
       sort: sort,
-      watch: document.getElementById("watch").checked
-    }));
-  });
+      watch: $("watch").checked
+    });
+    haptic("notify", "success");
+    if (inTelegram) tg.sendData(payload);
+    else console.log("sendData:", payload);
+  }
+
+  $("query").addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
+
+  tg.MainButton.setText("Знайти 🐾");
+  tg.MainButton.show();
+  tg.MainButton.onClick(submit);
+
+  if (!inTelegram) {
+    $("fallbackSubmit").style.display = "block";
+    $("fallbackSubmit").addEventListener("click", submit);
+  }
 </script>
 </body>
 </html>
