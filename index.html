@@ -75,6 +75,15 @@
   input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   input[type=number] { -moz-appearance: textfield; }
 
+  .select { position: relative; }
+  .select .field { padding-right: 44px; cursor: pointer; }
+  .select::after {
+    content: ""; position: absolute; right: 20px; top: 50%;
+    width: 8px; height: 8px; pointer-events: none;
+    border-right: 2px solid var(--hint); border-bottom: 2px solid var(--hint);
+    transform: translateY(-70%) rotate(45deg);
+  }
+
   .price { display: flex; align-items: center; gap: 8px; }
   .price .dash { color: var(--hint); }
   .price .field { flex: 1; min-width: 0; }
@@ -130,6 +139,7 @@
   .switch-row .txt { flex: 1; }
   .switch-row .txt b { display: block; font-weight: 600; }
   .switch-row .txt small { display: block; margin-top: 2px; font-size: 13px; color: var(--hint); }
+  .switch-row.compact { margin-top: 10px; padding-block: 11px; }
 
   .switch { position: relative; width: 51px; height: 31px; flex: none; }
   .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
@@ -168,6 +178,16 @@
   <div class="section">
     <label class="label" for="query">Що шукаємо?</label>
     <input id="query" class="field" type="text" placeholder="Напр. помада dior" autocomplete="off" enterkeyhint="done">
+    <label class="switch-row compact">
+      <span class="txt">
+        <b>Тільки точний збіг у назві</b>
+        <small>Усі слова запиту мають бути в назві</small>
+      </span>
+      <span class="switch">
+        <input id="exact" type="checkbox" role="switch">
+        <span class="track"></span>
+      </span>
+    </label>
   </div>
 
   <div class="section">
@@ -187,12 +207,53 @@
   </div>
 
   <div class="section">
+    <label class="label" for="city">Місто</label>
+    <div class="select">
+      <select id="city" class="field">
+        <option value="">Вся Україна</option>
+        <option value="kyiv">Київ</option>
+        <option value="kharkiv">Харків</option>
+        <option value="odesa">Одеса</option>
+        <option value="dnipro">Дніпро</option>
+        <option value="lviv">Львів</option>
+        <option value="zaporizhzhia">Запоріжжя</option>
+        <option value="vinnytsia">Вінниця</option>
+        <option value="zhytomyr">Житомир</option>
+        <option value="ivano-frankivsk">Івано-Франківськ</option>
+        <option value="kropyvnytskyi">Кропивницький</option>
+        <option value="lutsk">Луцьк</option>
+        <option value="mykolaiv">Миколаїв</option>
+        <option value="poltava">Полтава</option>
+        <option value="rivne">Рівне</option>
+        <option value="sumy">Суми</option>
+        <option value="ternopil">Тернопіль</option>
+        <option value="uzhhorod">Ужгород</option>
+        <option value="kherson">Херсон</option>
+        <option value="khmelnytskyi">Хмельницький</option>
+        <option value="cherkasy">Черкаси</option>
+        <option value="chernivtsi">Чернівці</option>
+        <option value="chernihiv">Чернігів</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="section">
+    <span class="label">Стан</span>
+    <div class="segmented" id="state" role="radiogroup">
+      <div class="thumb" aria-hidden="true"></div>
+      <button type="button" role="radio" class="active" aria-checked="true" data-value="any">Будь-який</button>
+      <button type="button" role="radio" aria-checked="false" data-value="new">Нове</button>
+      <button type="button" role="radio" aria-checked="false" data-value="used">Вживане</button>
+    </div>
+  </div>
+
+  <div class="section">
     <span class="label">Сортування</span>
     <div class="segmented" id="sort" role="radiogroup">
       <div class="thumb" aria-hidden="true"></div>
-      <button type="button" role="radio" class="active" aria-checked="true" data-sort="new">Нові</button>
-      <button type="button" role="radio" aria-checked="false" data-sort="cheap">Дешевші</button>
-      <button type="button" role="radio" aria-checked="false" data-sort="expensive">Дорожчі</button>
+      <button type="button" role="radio" class="active" aria-checked="true" data-value="new">Нові</button>
+      <button type="button" role="radio" aria-checked="false" data-value="cheap">Дешевші</button>
+      <button type="button" role="radio" aria-checked="false" data-value="expensive">Дорожчі</button>
     </div>
   </div>
 
@@ -299,25 +360,45 @@
     saveForm();
   }));
 
-  /* ---------- Sort ---------- */
-  let sort = "new";
-  const segBtns = document.querySelectorAll("#sort button");
-  const thumb = document.querySelector("#sort .thumb");
-  function setSort(value) {
-    segBtns.forEach((b, i) => {
-      const on = b.dataset.sort === value;
-      b.classList.toggle("active", on);
-      b.setAttribute("aria-checked", on ? "true" : "false");
-      if (on) thumb.style.transform = `translateX(${i * 100}%)`;
-    });
-    sort = value;
+  /* ---------- Segmented: sort, state ---------- */
+  function makeSegmented(el) {
+    const btns = [...el.querySelectorAll("button")];
+    const thumb = el.querySelector(".thumb");
+    const control = {
+      value: btns.find(b => b.classList.contains("active")).dataset.value,
+      has: value => btns.some(b => b.dataset.value === value),
+      set(value) {
+        btns.forEach((b, i) => {
+          const on = b.dataset.value === value;
+          b.classList.toggle("active", on);
+          b.setAttribute("aria-checked", on ? "true" : "false");
+          if (on) thumb.style.transform = `translateX(${i * 100}%)`;
+        });
+        control.value = value;
+      }
+    };
+    btns.forEach(btn => btn.addEventListener("click", () => {
+      if (btn.dataset.value === control.value) return;
+      control.set(btn.dataset.value);
+      haptic("select");
+      saveForm();
+    }));
+    return control;
   }
-  segBtns.forEach(btn => btn.addEventListener("click", () => {
-    if (btn.dataset.sort === sort) return;
-    setSort(btn.dataset.sort);
+  const sortControl = makeSegmented($("sort"));
+  const stateControl = makeSegmented($("state"));
+  const thumbs = document.querySelectorAll(".segmented .thumb");
+
+  /* ---------- City, exact ---------- */
+  const cityEl = $("city");
+  cityEl.addEventListener("change", () => {
     haptic("select");
     saveForm();
-  }));
+  });
+  $("exact").addEventListener("change", e => {
+    haptic("impact", e.target.checked ? "medium" : "light");
+    saveForm();
+  });
 
   /* ---------- Period ---------- */
   let period = "any";
@@ -353,7 +434,8 @@
   function saveForm() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        query: $("query").value, min: minEl.value, max: maxEl.value, sort: sort, period: period
+        query: $("query").value, min: minEl.value, max: maxEl.value, sort: sortControl.value, period: period,
+        city: cityEl.value, state: stateControl.value, exact: $("exact").checked
       }));
     } catch (_) {}
   }
@@ -366,8 +448,11 @@
     if (typeof data.query === "string") $("query").value = data.query;
     if (isPrice(data.min)) minEl.value = data.min;
     if (isPrice(data.max)) maxEl.value = data.max;
-    if ([...segBtns].some(b => b.dataset.sort === data.sort)) setSort(data.sort);
+    if (sortControl.has(data.sort)) sortControl.set(data.sort);
     if ([...periodBtns].some(b => b.dataset.period === data.period)) setPeriod(data.period);
+    if ([...cityEl.options].some(o => o.value === data.city)) cityEl.value = data.city;
+    if (stateControl.has(data.state)) stateControl.set(data.state);
+    if (typeof data.exact === "boolean") $("exact").checked = data.exact;
   }
 
   /* ---------- Submit ---------- */
@@ -389,8 +474,11 @@
       query: query,
       min_price: min ? Number(min) : null,
       max_price: max ? Number(max) : null,
-      sort: sort,
+      sort: sortControl.value,
       period: period,
+      city: cityEl.value || null,
+      state: stateControl.value === "any" ? null : stateControl.value,
+      exact: $("exact").checked,
       watch: $("watch").checked
     });
     haptic("notify", "success");
@@ -403,12 +491,12 @@
     saveForm();
   });
 
-  thumb.style.transition = "none";
+  thumbs.forEach(t => { t.style.transition = "none"; });
   loadForm();
   validatePrice();
   syncPresets();
   syncWatch();
-  requestAnimationFrame(() => { thumb.style.transition = ""; });
+  requestAnimationFrame(() => { thumbs.forEach(t => { t.style.transition = ""; }); });
 
   tg.ready();
   tg.expand();
